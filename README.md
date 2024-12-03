@@ -10,8 +10,7 @@ Aplikasi ini dirancang untuk memantau konsumsi listrik melalui KWH meter menggun
 - **Konfigurasi Mudah**: Memungkinkan pengguna untuk mengkonfigurasi dan mengelola pengaturan perangkat dan notifikasi.
 
 ## Teknologi yang Digunakan
-- **Arduino/Raspberry Pi**: Sebagai perangkat utama untuk menangkap data dari KWH meter.
-- **Node.js / Python**: Memproses dan mengirim data dari perangkat ke server.
+- **Arduino/ESP32 Cam**: Sebagai perangkat utama untuk menangkap data dari KWH meter.
 - **Telegram Bot API**: Mengirimkan notifikasi dan menerima perintah dari pengguna.
 - **Platform Cloud**: (Opsional) Menyimpan data di cloud untuk pemantauan dan analisis lebih lanjut.
 
