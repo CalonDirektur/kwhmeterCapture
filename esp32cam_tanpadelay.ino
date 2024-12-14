@@ -7,12 +7,12 @@
 #include <UniversalTelegramBot.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "POCO X3 Pro";
-const char* password = "1234567890";
+const char* ssid = "TELPRO-7Heroe";
+const char* password = "Telpro070707";
 
 // Initialize Telegram BOT
 String BOTtoken = "7762900310:AAGQ6JgCSGaLgFKmRL0CsDGt_SK--HY29FM";  // your Bot Token (Get from Botfather)
-String CHAT_ID = "-4598800903";
+String CHAT_ID = "458535076";
 
 bool sendPhoto = false;
 
@@ -200,6 +200,74 @@ String sendPhotoTelegram() {
     return getBody;
 }
 
+String sendPhotoToServer() {
+    const char* serverUrl = "http://36.66.242.11/tesseract-main/upload.php";
+    String getAll = "";
+    String getBody = "";
+
+    camera_fb_t * fb = esp_camera_fb_get();  
+    if (!fb) {
+        Serial.println("Camera capture failed");
+        return "Camera capture failed";
+    }  
+
+    Serial.println("Connecting to server: " + String(serverUrl));
+
+    WiFiClient client;
+    if (client.connect("36.66.242.11", 80)) {
+        Serial.println("Connection to server successful");
+
+        // Define the boundary
+        String boundary = "boundary123456789";
+        String head = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"image\"; filename=\"esp32-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
+        String tail = "\r\n--" + boundary + "--\r\n";
+
+        uint16_t imageLen = fb->len;
+        uint16_t extraLen = head.length() + tail.length();
+        uint16_t totalLen = imageLen + extraLen;
+
+        // Kirim HTTP header
+        client.println("POST /tesseract-main/upload.php HTTP/1.1");
+        client.println("Host: 36.66.242.11");
+        client.println("Content-Length: " + String(totalLen));
+        client.println("Content-Type: multipart/form-data; boundary=" + boundary);
+        client.println();
+
+        // Kirim header
+        client.print(head);
+
+        // Kirim data gambar
+        uint8_t *fbBuf = fb->buf;
+        size_t fbLen = fb->len;
+        for (size_t n = 0; n < fbLen; n += 1024) {
+            if (n + 1024 < fbLen) {
+                client.write(fbBuf, 1024);
+                fbBuf += 1024;
+            } else if (fbLen % 1024 > 0) {
+                size_t remainder = fbLen % 1024;
+                client.write(fbBuf, remainder);
+            }
+        }
+
+        // Kirim tail
+        client.print(tail);
+
+        // Tunggu respons dari server
+        while (client.connected() || client.available()) {
+            if (client.available()) {
+                char c = client.read();
+                getAll += String(c);
+            }
+        }
+        client.stop();
+        Serial.println("Response from server: " + getAll);
+    } else {
+        Serial.println("Failed to connect to server.");
+    }
+    esp_camera_fb_return(fb); // Kembalikan buffer frame
+    return getAll;
+}
+
 void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); 
     // Init Serial Monitor
@@ -231,8 +299,12 @@ void setup() {
 void loop() {
     if (sendPhoto) {
         Serial.println("Preparing photo");
-        String response = sendPhotoTelegram(); 
-        Serial.println("Response: " + response);
+        String responseTelegram = sendPhotoTelegram(); 
+        Serial.println("Response from Telegram: " + responseTelegram);
+        
+        String responseServer = sendPhotoToServer();
+        Serial.println("Response from Server: " + responseServer);
+        
         sendPhoto = false; 
     }
     if (millis() > lastTimeBotRan + botRequestDelay)  {
